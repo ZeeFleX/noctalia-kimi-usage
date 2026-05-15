@@ -59,6 +59,14 @@ Item {
     }
   }
 
+  function iconColorForUsage() {
+    if (mouseArea.containsMouse) return Color.mOnHover
+    if (root.errorString !== "") return "#ef4444"
+    if (root.maxUsedPercent >= 90) return "#ef4444"
+    if (root.maxUsedPercent >= 60) return "#fb923c"
+    return "#4ade80"
+  }
+
   Rectangle {
     id: visualCapsule
     x: Style.pixelAlignCenter(parent.width, width)
@@ -74,14 +82,6 @@ Item {
       id: capsuleRow
       anchors.centerIn: parent
       spacing: Style.marginS
-
-      function iconColorForUsage() {
-        if (mouseArea.containsMouse) return Color.mOnHover
-        if (root.errorString !== "") return Color.mError
-        if (root.maxUsedPercent >= 90) return Color.mError
-        if (root.maxUsedPercent >= 60) return Color.mWarning
-        return "#22c55e"
-      }
 
       NIcon {
         icon: "music"
@@ -101,7 +101,7 @@ Item {
       NText {
         visible: root.errorString !== "" && root.weeklyLimit === 0 && root.fiveHourLimit === 0
         text: "!"
-        color: Color.mError
+        color: "#ef4444"
         pointSize: root.barFontSize
         applyUiScale: false
         font.weight: Font.Bold
@@ -131,15 +131,15 @@ Item {
         tip = pluginApi?.tr("bar.noData") || "No data"
       } else {
         if (root.weeklyLimit > 0) {
-          tip += (pluginApi?.tr("bar.weekly") || "Weekly") + ": " + root.weeklyUsed + "/" + root.weeklyLimit + " (" + root.weeklyUsedPercent + "% used)"
-          let weeklyReset = root.mainInstance?.formatResetTime(root.mainInstance?.weeklyResetTime ?? "") ?? ""
-          if (weeklyReset) tip += " — " + (pluginApi?.tr("bar.resetsIn") || "resets in") + " " + weeklyReset
+          let weeklyResetH = root.mainInstance?.formatResetTimeHours(root.mainInstance?.weeklyResetTime ?? "") ?? ""
+          tip += (pluginApi?.tr("bar.weekly") || "Недельный лимит") + ": " + root.weeklyUsedPercent + "%"
+          if (weeklyResetH) tip += ". " + (pluginApi?.tr("bar.resetsIn") || "До сброса") + " " + weeklyResetH + " " + (pluginApi?.tr("bar.hours") || "часа")
         }
         if (root.fiveHourLimit > 0) {
           if (tip) tip += "\n"
-          tip += (pluginApi?.tr("bar.fiveHour") || "5h") + ": " + root.fiveHourUsed + "/" + root.fiveHourLimit + " (" + root.fiveHourUsedPercent + "% used)"
-          let fiveHourReset = root.mainInstance?.formatResetTime(root.mainInstance?.fiveHourResetTime ?? "") ?? ""
-          if (fiveHourReset) tip += " — " + (pluginApi?.tr("bar.resetsIn") || "resets in") + " " + fiveHourReset
+          let fiveHourResetH = root.mainInstance?.formatResetTimeHours(root.mainInstance?.fiveHourResetTime ?? "") ?? ""
+          tip += (pluginApi?.tr("bar.fiveHour") || "5-часовой лимит") + ": " + root.fiveHourUsedPercent + "%"
+          if (fiveHourResetH) tip += ". " + (pluginApi?.tr("bar.resetsIn") || "До сброса") + " " + fiveHourResetH + " " + (pluginApi?.tr("bar.hours") || "часа")
         }
       }
       TooltipService.show(root, tip, BarService.getTooltipDirection())

@@ -4,8 +4,9 @@
   "bar": {
     "weekly": "Weekly limit",
     "fiveHour": "5-hour limit",
-    "resetsIn": "resets in",
+    "resetsIn": "Resets in",
     "soon": "soon",
+    "hours": "hours"
     "noData": "No usage data available",
     "error": "Error"
   },

@@ -173,4 +173,18 @@ Item {
       return ""
     }
   }
+
+  function formatResetTimeHours(isoString) {
+    if (!isoString) return ""
+    try {
+      let d = new Date(isoString)
+      let now = new Date()
+      let diffMs = d - now
+      if (diffMs <= 0) return "0"
+      let diffH = Math.round(diffMs / 3600000)
+      return diffH.toString()
+    } catch (e) {
+      return ""
+    }
+  }
 }
