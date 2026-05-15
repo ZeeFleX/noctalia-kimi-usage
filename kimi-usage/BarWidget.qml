@@ -75,25 +75,27 @@ Item {
       anchors.centerIn: parent
       spacing: Style.marginS
 
+      function iconColorForUsage() {
+        if (mouseArea.containsMouse) return Color.mOnHover
+        if (root.errorString !== "") return Color.mError
+        if (root.maxUsedPercent >= 90) return Color.mError
+        if (root.maxUsedPercent >= 60) return Color.mWarning
+        return "#22c55e"
+      }
+
       NIcon {
-        icon: "brain"
-        color: {
-          if (mouseArea.containsMouse) return Color.mOnHover
-          if (root.errorString !== "") return Color.mError
-          if (root.maxUsedPercent >= 90) return Color.mError
-          if (root.maxUsedPercent >= 60) return Color.mWarning
-          return "#22c55e"
-        }
+        icon: "music"
+        color: iconColorForUsage()
         applyUiScale: true
       }
 
       NText {
         visible: root.weeklyLimit > 0 || root.fiveHourLimit > 0
         text: "W:" + root.weeklyUsedPercent + "% 5H:" + root.fiveHourUsedPercent + "%"
-        color: mouseArea.containsMouse ? Color.mOnHover : Color.mOnSurface
-        pointSize: root.barFontSize
+        color: iconColorForUsage()
+        pointSize: root.barFontSize - 1
         applyUiScale: false
-        font.weight: Font.Normal
+        font.weight: Font.Bold
       }
 
       NText {
