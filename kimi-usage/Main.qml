@@ -82,6 +82,11 @@ Item {
     xhr.send()
   }
 
+  function safeParseInt(val) {
+    let n = parseInt(val)
+    return isNaN(n) ? 0 : n
+  }
+
   function parseResponse(data) {
     // Reset values
     weeklyLimit = 0
@@ -93,45 +98,62 @@ Item {
     fiveHourRemaining = 0
     fiveHourResetTime = ""
 
+    Logger.d("KimiUsage", "Raw API response: " + JSON.stringify(data))
+
     // Try limits array first (Kimi Code format)
     if (data.limits && Array.isArray(data.limits)) {
       for (let i = 0; i < data.limits.length; i++) {
         let limit = data.limits[i]
         let window = limit.window || {}
         let detail = limit.detail || {}
-        let duration = window.duration || 0
+        let duration = safeParseInt(window.duration)
         let timeUnit = window.timeUnit || ""
+
+        Logger.d("KimiUsage", "Limit[" + i + "] duration=" + duration + " unit=" + timeUnit)
 
         // 5-hour limit = 300 minutes
         if (duration === 300 && timeUnit === "TIME_UNIT_MINUTE") {
-          fiveHourLimit = parseInt(detail.limit) || 0
-          fiveHourUsed = parseInt(detail.used) || 0
-          fiveHourRemaining = parseInt(detail.remaining) || 0
+          fiveHourLimit = safeParseInt(detail.limit)
+          fiveHourUsed = safeParseInt(detail.used)
+          fiveHourRemaining = safeParseInt(detail.remaining)
+          if (fiveHourRemaining === 0 && fiveHourUsed > 0 && fiveHourLimit > 0) {
+            fiveHourRemaining = fiveHourLimit - fiveHourUsed
+          }
           fiveHourResetTime = detail.resetTime || ""
+          Logger.d("KimiUsage", "Parsed 5h: used=" + fiveHourUsed + " remaining=" + fiveHourRemaining + " limit=" + fiveHourLimit)
         }
 
         // Weekly limit possibilities
         if ((duration === 10080 && timeUnit === "TIME_UNIT_MINUTE") ||
             timeUnit === "TIME_UNIT_WEEK" ||
-            (timeUnit === "TIME_UNIT_DAY" && duration === 7)) {
-          weeklyLimit = parseInt(detail.limit) || 0
-          weeklyUsed = parseInt(detail.used) || 0
-          weeklyRemaining = parseInt(detail.remaining) || 0
+            (duration === 7 && timeUnit === "TIME_UNIT_DAY") ||
+            (duration === 168 && timeUnit === "TIME_UNIT_HOUR")) {
+          weeklyLimit = safeParseInt(detail.limit)
+          weeklyUsed = safeParseInt(detail.used)
+          weeklyRemaining = safeParseInt(detail.remaining)
+          if (weeklyRemaining === 0 && weeklyUsed > 0 && weeklyLimit > 0) {
+            weeklyRemaining = weeklyLimit - weeklyUsed
+          }
           weeklyResetTime = detail.resetTime || ""
+          Logger.d("KimiUsage", "Parsed weekly from limits: used=" + weeklyUsed + " remaining=" + weeklyRemaining + " limit=" + weeklyLimit)
         }
       }
     }
 
-    // Fallback: if limits array didn't yield results, try data.usage
-    if (weeklyLimit === 0 && fiveHourLimit === 0 && data.usage) {
-      // If there is only one usage block, treat it as weekly
-      weeklyLimit = parseInt(data.usage.limit) || 0
-      weeklyUsed = parseInt(data.usage.used) || 0
-      weeklyRemaining = parseInt(data.usage.remaining) || 0
+    // If weekly not found in limits array, try data.usage as weekly fallback
+    if (weeklyLimit === 0 && data.usage) {
+      Logger.d("KimiUsage", "Using data.usage as weekly fallback")
+      weeklyLimit = safeParseInt(data.usage.limit)
+      weeklyUsed = safeParseInt(data.usage.used)
+      weeklyRemaining = safeParseInt(data.usage.remaining)
+      if (weeklyRemaining === 0 && weeklyUsed > 0 && weeklyLimit > 0) {
+        weeklyRemaining = weeklyLimit - weeklyUsed
+      }
       weeklyResetTime = data.usage.resetTime || ""
+      Logger.d("KimiUsage", "Parsed weekly from usage: used=" + weeklyUsed + " remaining=" + weeklyRemaining + " limit=" + weeklyLimit)
     }
 
-    Logger.i("KimiUsage", "Weekly: " + weeklyUsed + "/" + weeklyLimit + ", 5h: " + fiveHourUsed + "/" + fiveHourLimit)
+    Logger.i("KimiUsage", "Final weekly=" + weeklyRemaining + "/" + weeklyLimit + " (" + Math.round(weeklyLimit > 0 ? (weeklyRemaining / weeklyLimit) * 100 : 0) + "%), 5h=" + fiveHourRemaining + "/" + fiveHourLimit + " (" + Math.round(fiveHourLimit > 0 ? (fiveHourRemaining / fiveHourLimit) * 100 : 0) + "%)")
   }
 
   function formatResetTime(isoString) {
