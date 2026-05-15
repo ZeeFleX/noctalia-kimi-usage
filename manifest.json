@@ -1,0 +1,21 @@
+{
+  "id": "kimi-usage",
+  "name": "Kimi Usage",
+  "version": "1.0.0",
+  "minNoctaliaVersion": "3.6.0",
+  "author": "Assistant",
+  "license": "MIT",
+  "description": "Display Kimi AI weekly and 5-hour usage limits in the status bar",
+  "tags": ["Bar", "Utility"],
+  "entryPoints": {
+    "main": "Main.qml",
+    "barWidget": "BarWidget.qml",
+    "settings": "Settings.qml"
+  },
+  "metadata": {
+    "defaultSettings": {
+      "apiKey": "",
+      "apiEndpoint": "https://api.kimi.com/coding/v1/usages"
+    }
+  }
+}

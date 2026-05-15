@@ -1,0 +1,154 @@
+import QtQuick
+import Quickshell
+import qs.Commons
+import qs.Services.UI
+
+Item {
+  id: root
+  property var pluginApi: null
+
+  property var cfg: pluginApi?.pluginSettings || ({})
+  property var defaults: pluginApi?.manifest?.metadata?.defaultSettings || ({})
+
+  // Weekly limit data
+  property int weeklyLimit: 0
+  property int weeklyUsed: 0
+  property int weeklyRemaining: 0
+  property string weeklyResetTime: ""
+
+  // 5-hour limit data
+  property int fiveHourLimit: 0
+  property int fiveHourUsed: 0
+  property int fiveHourRemaining: 0
+  property string fiveHourResetTime: ""
+
+  property bool loading: false
+  property string errorString: ""
+
+  readonly property string apiKey: cfg.apiKey ?? defaults.apiKey ?? ""
+  readonly property string apiEndpoint: cfg.apiEndpoint ?? defaults.apiEndpoint ?? "https://api.kimi.com/coding/v1/usages"
+
+  Component.onCompleted: {
+    Logger.i("KimiUsage", "Plugin loaded")
+    refresh()
+  }
+
+  Timer {
+    id: refreshTimer
+    interval: 60000
+    running: true
+    repeat: true
+    onTriggered: root.refresh()
+  }
+
+  function refresh() {
+    if (!apiKey || apiKey === "") {
+      errorString = pluginApi?.tr("errors.noApiKey") || "No API key configured"
+      return
+    }
+
+    loading = true
+    errorString = ""
+
+    let xhr = new XMLHttpRequest()
+    xhr.open("GET", apiEndpoint)
+    xhr.setRequestHeader("Authorization", "Bearer " + apiKey)
+    xhr.setRequestHeader("Accept", "application/json")
+
+    xhr.onreadystatechange = function() {
+      if (xhr.readyState === XMLHttpRequest.DONE) {
+        loading = false
+        if (xhr.status === 200) {
+          try {
+            let data = JSON.parse(xhr.responseText)
+            root.parseResponse(data)
+          } catch (e) {
+            errorString = pluginApi?.tr("errors.parse") || "Parse error"
+            Logger.w("KimiUsage", "Failed to parse response: " + e)
+          }
+        } else if (xhr.status === 401) {
+          errorString = pluginApi?.tr("errors.unauthorized") || "Unauthorized"
+          Logger.w("KimiUsage", "HTTP 401: Invalid API key")
+        } else if (xhr.status === 429) {
+          errorString = pluginApi?.tr("errors.rateLimited") || "Rate limited"
+          Logger.w("KimiUsage", "HTTP 429: Rate limited")
+        } else {
+          errorString = "HTTP " + xhr.status
+          Logger.w("KimiUsage", "HTTP error " + xhr.status + ": " + xhr.responseText)
+        }
+      }
+    }
+
+    xhr.send()
+  }
+
+  function parseResponse(data) {
+    // Reset values
+    weeklyLimit = 0
+    weeklyUsed = 0
+    weeklyRemaining = 0
+    weeklyResetTime = ""
+    fiveHourLimit = 0
+    fiveHourUsed = 0
+    fiveHourRemaining = 0
+    fiveHourResetTime = ""
+
+    // Try limits array first (Kimi Code format)
+    if (data.limits && Array.isArray(data.limits)) {
+      for (let i = 0; i < data.limits.length; i++) {
+        let limit = data.limits[i]
+        let window = limit.window || {}
+        let detail = limit.detail || {}
+        let duration = window.duration || 0
+        let timeUnit = window.timeUnit || ""
+
+        // 5-hour limit = 300 minutes
+        if (duration === 300 && timeUnit === "TIME_UNIT_MINUTE") {
+          fiveHourLimit = parseInt(detail.limit) || 0
+          fiveHourUsed = parseInt(detail.used) || 0
+          fiveHourRemaining = parseInt(detail.remaining) || 0
+          fiveHourResetTime = detail.resetTime || ""
+        }
+
+        // Weekly limit possibilities
+        if ((duration === 10080 && timeUnit === "TIME_UNIT_MINUTE") ||
+            timeUnit === "TIME_UNIT_WEEK" ||
+            (timeUnit === "TIME_UNIT_DAY" && duration === 7)) {
+          weeklyLimit = parseInt(detail.limit) || 0
+          weeklyUsed = parseInt(detail.used) || 0
+          weeklyRemaining = parseInt(detail.remaining) || 0
+          weeklyResetTime = detail.resetTime || ""
+        }
+      }
+    }
+
+    // Fallback: if limits array didn't yield results, try data.usage
+    if (weeklyLimit === 0 && fiveHourLimit === 0 && data.usage) {
+      // If there is only one usage block, treat it as weekly
+      weeklyLimit = parseInt(data.usage.limit) || 0
+      weeklyUsed = parseInt(data.usage.used) || 0
+      weeklyRemaining = parseInt(data.usage.remaining) || 0
+      weeklyResetTime = data.usage.resetTime || ""
+    }
+
+    Logger.i("KimiUsage", "Weekly: " + weeklyUsed + "/" + weeklyLimit + ", 5h: " + fiveHourUsed + "/" + fiveHourLimit)
+  }
+
+  function formatResetTime(isoString) {
+    if (!isoString) return ""
+    try {
+      let d = new Date(isoString)
+      let now = new Date()
+      let diffMs = d - now
+      if (diffMs <= 0) return pluginApi?.tr("bar.soon") || "soon"
+      let diffH = Math.floor(diffMs / 3600000)
+      let diffM = Math.floor((diffMs % 3600000) / 60000)
+      if (diffH > 0) {
+        return diffH + "h " + diffM + "m"
+      }
+      return diffM + "m"
+    } catch (e) {
+      return ""
+    }
+  }
+}

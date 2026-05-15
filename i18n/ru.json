@@ -1,0 +1,28 @@
+{
+  "name": "Kimi Usage",
+  "description": "Отображение недельного и пятичасового лимитов использования Kimi AI в статусбаре",
+  "bar": {
+    "weekly": "Недельный лимит",
+    "fiveHour": "5-часовой лимит",
+    "resetsIn": "сброс через",
+    "soon": "скоро",
+    "noData": "Нет данных об использовании",
+    "error": "Ошибка"
+  },
+  "context": {
+    "refresh": "Обновить",
+    "settings": "Настройки"
+  },
+  "settings": {
+    "apiKey": "API ключ",
+    "apiKeyDesc": "Ваш Kimi API ключ (KIMI_API_KEY)",
+    "endpoint": "API Endpoint",
+    "endpointDesc": "URL для получения лимитов использования"
+  },
+  "errors": {
+    "noApiKey": "API ключ не настроен",
+    "parse": "Не удалось разобрать ответ API",
+    "unauthorized": "Неверный API ключ",
+    "rateLimited": "Превышен лимит запросов к API"
+  }
+}

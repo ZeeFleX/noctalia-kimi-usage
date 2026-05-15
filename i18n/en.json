@@ -1,0 +1,28 @@
+{
+  "name": "Kimi Usage",
+  "description": "Display Kimi AI weekly and 5-hour usage limits in the status bar",
+  "bar": {
+    "weekly": "Weekly limit",
+    "fiveHour": "5-hour limit",
+    "resetsIn": "resets in",
+    "soon": "soon",
+    "noData": "No usage data available",
+    "error": "Error"
+  },
+  "context": {
+    "refresh": "Refresh",
+    "settings": "Settings"
+  },
+  "settings": {
+    "apiKey": "API Key",
+    "apiKeyDesc": "Your Kimi API key (KIMI_API_KEY)",
+    "endpoint": "API Endpoint",
+    "endpointDesc": "URL to fetch usage limits from"
+  },
+  "errors": {
+    "noApiKey": "No API key configured",
+    "parse": "Failed to parse API response",
+    "unauthorized": "Invalid API key",
+    "rateLimited": "Rate limited by API"
+  }
+}
