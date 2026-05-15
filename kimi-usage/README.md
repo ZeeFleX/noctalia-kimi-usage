@@ -28,14 +28,14 @@ Noctalia (Quickshell) plugin that displays **Kimi AI** usage limits in your stat
 1. Open **Noctalia Settings → Plugins → Sources**
 2. Add new source:
    - **Name**: `Kimi Usage`
-   - **URL**: `https://github.com/ZeeFleX/noctalia-kimi-usage`
+   - **URL**: `https://github.com/ZeeFleX/noctalia-plugins`
 3. Install `kimi-usage` from the plugin list
 
 ### Manual
 
 ```bash
 cd ~/.config/noctalia/plugins
-git clone https://github.com/ZeeFleX/noctalia-kimi-usage.git kimi-usage
+git clone https://github.com/ZeeFleX/noctalia-plugins.git kimi-usage
 ```
 
 Then add to `~/.config/noctalia/plugins.json`:

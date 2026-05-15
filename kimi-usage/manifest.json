@@ -4,7 +4,7 @@
   "version": "1.0.0",
   "minNoctaliaVersion": "3.6.0",
   "author": "Ilya Kardapolov (ZeeFleX)",
-  "repository": "https://github.com/ZeeFleX/noctalia-kimi-usage",
+  "repository": "https://github.com/ZeeFleX/noctalia-plugins",
   "license": "MIT",
   "description": "Display Kimi AI weekly and 5-hour usage limits in the status bar",
   "tags": ["Bar", "AI", "Utility", "Niri"],
