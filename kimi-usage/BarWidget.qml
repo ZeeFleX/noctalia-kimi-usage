@@ -91,11 +91,11 @@ Item {
 
       NText {
         visible: root.weeklyLimit > 0 || root.fiveHourLimit > 0
-        text: "W:" + root.weeklyUsedPercent + "% 5H:" + root.fiveHourUsedPercent + "%"
+        text: "W: " + root.weeklyUsedPercent + "%  5H: " + root.fiveHourUsedPercent + "%"
         color: iconColorForUsage()
         pointSize: root.barFontSize - 1
         applyUiScale: false
-        font.weight: Font.Bold
+        font.weight: Font.Normal
       }
 
       NText {
