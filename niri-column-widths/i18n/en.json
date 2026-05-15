@@ -1,0 +1,11 @@
+{
+  "name": "Niri Column Widths",
+  "description": "Quick column width presets for Niri compositor",
+  "bar": {
+    "tooltip": "Click to set column width"
+  },
+  "settings": {
+    "presets": "Presets",
+    "presetsDesc": "Enter presets separated by commas. Examples: 33%, 50%, 66%, fixed 500, +10%"
+  }
+}

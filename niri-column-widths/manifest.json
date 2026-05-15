@@ -1,0 +1,29 @@
+{
+  "id": "niri-column-widths",
+  "name": "Niri Column Widths",
+  "version": "1.0.0",
+  "minNoctaliaVersion": "3.6.0",
+  "author": "Ilya Kardapolov (ZeeFleX)",
+  "license": "MIT",
+  "repository": "https://github.com/ZeeFleX/noctalia-plugins",
+  "description": "Quick column width presets for Niri compositor. Switch between ⅓, ½, ⅔ and custom widths from the status bar.",
+  "tags": [
+    "Bar",
+    "Niri",
+    "Utility"
+  ],
+  "entryPoints": {
+    "main": "Main.qml",
+    "barWidget": "BarWidget.qml",
+    "settings": "Settings.qml"
+  },
+  "metadata": {
+    "defaultSettings": {
+      "presets": [
+        "33%",
+        "50%",
+        "66%"
+      ]
+    }
+  }
+}

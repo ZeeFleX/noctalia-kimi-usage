@@ -1,9 +1,9 @@
 # Root-level copies for local Noctalia loading
 # (source of truth is in kimi-usage/ subdirectory)
-manifest.json
-BarWidget.qml
-Main.qml
-Settings.qml
-preview.png
-README.md
-i18n/
+/manifest.json
+/BarWidget.qml
+/Main.qml
+/Settings.qml
+/preview.png
+/README.md
+/i18n/
