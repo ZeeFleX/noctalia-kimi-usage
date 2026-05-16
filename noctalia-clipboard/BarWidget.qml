@@ -24,9 +24,9 @@ Item {
 
   readonly property var cfg: pluginApi?.pluginSettings ?? ({})
   readonly property var defaults: pluginApi?.manifest?.metadata?.defaultSettings ?? ({})
-  readonly property int maxItems: cfg.maxItems ?? defaults.maxItems ?? 50
-  readonly property int previewWidth: cfg.previewWidth ?? defaults.previewWidth ?? 60
-  readonly property bool showCount: cfg.showCount ?? defaults.showCount ?? true
+  readonly property int maxItems: parseInt(cfg.maxItems ?? defaults.maxItems ?? 50) || 50
+  readonly property int previewWidth: parseInt(cfg.previewWidth ?? defaults.previewWidth ?? 60) || 60
+  readonly property bool showCount: (cfg.showCount ?? defaults.showCount ?? true) ? true : false
 
   readonly property real contentWidth: {
     if (showCount && itemCount > 0) {
@@ -50,7 +50,6 @@ Item {
       "cliphist list | head -n " + maxItems + " > /tmp/noctalia-clipboard-list.txt"
     ])
 
-    // Read file after short delay
     Qt.callLater(function() {
       var xhr = new XMLHttpRequest()
       xhr.open("GET", "file:///tmp/noctalia-clipboard-list.txt")
@@ -70,19 +69,17 @@ Item {
       var line = lines[i].trim()
       if (line === "") continue
 
-      // Format: "ID\tpreview_text"
       var tabIndex = line.indexOf("\t")
       if (tabIndex < 0) continue
 
       var id = line.substring(0, tabIndex)
       var preview = line.substring(tabIndex + 1)
 
-      // Detect images (cliphist stores images with binary data, preview shows as empty or special)
-      var isImage = preview.startsWith("\u0000") || preview === "" || preview.indexOf("[image]") >= 0
+      var isImage = preview === "" || preview.indexOf("\u0000") >= 0
 
       items.push({
         id: id,
-        preview: isImage ? pluginApi?.tr("popup.image") || "[Image]" : truncate(preview, previewWidth),
+        preview: isImage ? (pluginApi?.tr("popup.image") || "[Image]") : truncate(preview, previewWidth),
         fullText: preview,
         isImage: isImage
       })
@@ -94,7 +91,7 @@ Item {
   }
 
   function truncate(text, maxLen) {
-    if (text.length <= maxLen) return text
+    if (!text || text.length <= maxLen) return text || ""
     return text.substring(0, maxLen) + "…"
   }
 
@@ -108,8 +105,9 @@ Item {
     var lowerFilter = searchFilter.toLowerCase()
     for (var i = 0; i < clipboardItems.length; i++) {
       var item = clipboardItems[i]
-      if (item.fullText.toLowerCase().indexOf(lowerFilter) >= 0 ||
-          item.preview.toLowerCase().indexOf(lowerFilter) >= 0) {
+      var full = (item.fullText || "").toLowerCase()
+      var prev = (item.preview || "").toLowerCase()
+      if (full.indexOf(lowerFilter) >= 0 || prev.indexOf(lowerFilter) >= 0) {
         filtered.push(item)
       }
     }
@@ -121,7 +119,7 @@ Item {
       "cliphist decode " + itemId + " | wl-copy"
     ])
     Logger.i("NoctaliaClipboard", "Pasted item " + itemId)
-    clipboardMenu.close()
+    clipboardPopup.close()
   }
 
   function deleteItem(itemId) {
@@ -134,13 +132,12 @@ Item {
     Quickshell.execDetached(["cliphist", "wipe"])
     Logger.i("NoctaliaClipboard", "History cleared")
     refreshClipboardList()
-    clipboardMenu.close()
+    clipboardPopup.close()
   }
 
-  // Update list periodically and on show
   Timer {
     id: refreshTimer
-    interval: 2000
+    interval: 3000
     running: true
     repeat: true
     onTriggered: root.refreshClipboardList()
@@ -185,78 +182,153 @@ Item {
     }
   }
 
-  // Clipboard history menu
-  Menu {
-    id: clipboardMenu
+  // Popup for clipboard history
+  Popup {
+    id: clipboardPopup
+    x: root.width / 2 - width / 2
+    y: root.height + 4
+    width: 420
+    height: Math.min(500, listLayout.implicitHeight + headerLayout.implicitHeight + footerLayout.implicitHeight + 40)
+    padding: Style.marginM
+    modal: false
+    focus: true
+    closePolicy: Popup.CloseOnEscape | Popup.CloseOnPressOutsideParent
 
-    // Search field
-    MenuItem {
-      enabled: false
-      height: searchField.height + Style.marginS * 2
+    background: Rectangle {
+      color: Style.capsuleColor
+      radius: Style.radiusL
+      border.color: Style.capsuleBorderColor
+      border.width: 1
+    }
 
-      contentItem: NTextInput {
-        id: searchField
-        anchors.verticalCenter: parent.verticalCenter
-        anchors.left: parent.left
-        anchors.right: parent.right
-        anchors.margins: Style.marginS
-        label: pluginApi?.tr("popup.search") || "Search..."
-        placeholderText: pluginApi?.tr("popup.search") || "Search..."
-        text: root.searchFilter
-        onTextChanged: {
-          root.searchFilter = text
-          root.applyFilter()
+    ColumnLayout {
+      anchors.fill: parent
+      spacing: Style.marginS
+
+      // Header with search
+      RowLayout {
+        id: headerLayout
+        Layout.fillWidth: true
+        spacing: Style.marginS
+
+        NTextInput {
+          id: searchField
+          Layout.fillWidth: true
+          label: ""
+          placeholderText: pluginApi?.tr("popup.search") || "Search..."
+          text: root.searchFilter
+          onTextChanged: {
+            root.searchFilter = text
+            root.applyFilter()
+          }
+        }
+
+        NText {
+          text: "✕"
+          color: Color.mOnSurfaceVariant
+          pointSize: Style.fontSizeL
+          MouseArea {
+            anchors.fill: parent
+            onClicked: clipboardPopup.close()
+            cursorShape: Qt.PointingHandCursor
+          }
         }
       }
-    }
 
-    MenuSeparator {}
+      // Items list
+      ListView {
+        id: itemsList
+        Layout.fillWidth: true
+        Layout.fillHeight: true
+        clip: true
+        model: root.filteredItems
+        spacing: 1
 
-    // History items
-    Repeater {
-      model: root.filteredItems
+        delegate: Rectangle {
+          required property var modelData
+          required property int index
 
-      MenuItem {
-        required property var modelData
-        required property int index
+          width: itemsList.width
+          height: itemRow.implicitHeight + Style.marginS * 2
+          color: itemMouse.containsMouse ? Color.withOpacity(Color.mSurfaceVariant, 0.5) : "transparent"
+          radius: Style.radiusS
 
-        text: modelData.preview
-        enabled: true
+          RowLayout {
+            id: itemRow
+            anchors.fill: parent
+            anchors.margins: Style.marginS
+            spacing: Style.marginS
 
-        onTriggered: root.pasteItem(modelData.id)
+            NText {
+              Layout.fillWidth: true
+              text: modelData.preview
+              color: Color.mOnSurface
+              pointSize: Style.fontSizeS
+              wrapMode: Text.WrapAnywhere
+              maximumLineCount: 2
+              elide: Text.ElideRight
+            }
 
-        // Right-click to delete
-        MouseArea {
-          anchors.fill: parent
-          acceptedButtons: Qt.RightButton
-          onClicked: root.deleteItem(modelData.id)
+            NText {
+              text: "🗑"
+              visible: itemMouse.containsMouse
+              color: Color.mError
+              pointSize: Style.fontSizeS
+              MouseArea {
+                anchors.fill: parent
+                onClicked: root.deleteItem(modelData.id)
+                cursorShape: Qt.PointingHandCursor
+              }
+            }
+          }
+
+          MouseArea {
+            id: itemMouse
+            anchors.fill: parent
+            hoverEnabled: true
+            onClicked: root.pasteItem(modelData.id)
+            cursorShape: Qt.PointingHandCursor
+          }
+        }
+
+        NText {
+          visible: parent.count === 0
+          anchors.centerIn: parent
+          text: root.searchFilter !== ""
+            ? (pluginApi?.tr("popup.empty") || "No matching items")
+            : (pluginApi?.tr("popup.empty") || "Clipboard history is empty")
+          color: Color.mOnSurfaceVariant
+          pointSize: Style.fontSizeS
         }
       }
-    }
 
-    // Empty state
-    MenuItem {
-      visible: root.filteredItems.length === 0
-      enabled: false
-      text: root.searchFilter !== ""
-        ? (pluginApi?.tr("popup.empty") || "No matching items")
-        : (pluginApi?.tr("popup.empty") || "Clipboard history is empty")
-    }
+      // Footer
+      RowLayout {
+        id: footerLayout
+        Layout.fillWidth: true
+        spacing: Style.marginS
 
-    MenuSeparator {
-      visible: root.filteredItems.length > 0
-    }
+        Item {
+          Layout.fillWidth: true
+        }
 
-    // Clear history
-    MenuItem {
-      visible: root.itemCount > 0
-      text: pluginApi?.tr("popup.clear") || "Clear history"
-      onTriggered: root.clearHistory()
+        NText {
+          text: pluginApi?.tr("popup.clear") || "Clear history"
+          color: Color.mError
+          pointSize: Style.fontSizeS
+          MouseArea {
+            anchors.fill: parent
+            onClicked: root.clearHistory()
+            cursorShape: Qt.PointingHandCursor
+          }
+        }
+      }
     }
 
     onAboutToShow: {
       root.refreshClipboardList()
-      if (!cfg.persistFilter) {
+      var persist = cfg.persistFilter ?? defaults.persistFilter ?? true
+      if (!persist) {
         root.searchFilter = ""
         searchField.text = ""
       }
@@ -272,7 +344,7 @@ Item {
 
     onClicked: {
       if (mouse.button === Qt.LeftButton) {
-        clipboardMenu.popup()
+        clipboardPopup.open()
       } else if (mouse.button === Qt.RightButton) {
         if (pluginApi) BarService.openPluginSettings(screen, pluginApi.manifest)
       }

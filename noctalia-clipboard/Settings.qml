@@ -14,10 +14,10 @@ ColumnLayout {
   function saveSettings() {
     if (!pluginApi || !pluginApi.pluginSettings) return
 
-    pluginApi.pluginSettings.maxItems = parseInt(maxItemsInput.text) || defaults.maxItems || 50
-    pluginApi.pluginSettings.previewWidth = parseInt(previewWidthInput.text) || defaults.previewWidth || 60
-    pluginApi.pluginSettings.showCount = showCountSwitch.checked
-    pluginApi.pluginSettings.persistFilter = persistFilterSwitch.checked
+    pluginApi.pluginSettings.maxItems = parseInt(maxItemsInput.text) || (defaults.maxItems ?? 50)
+    pluginApi.pluginSettings.previewWidth = parseInt(previewWidthInput.text) || (defaults.previewWidth ?? 60)
+    pluginApi.pluginSettings.showCount = showCountCheck.text === "1"
+    pluginApi.pluginSettings.persistFilter = persistFilterCheck.text === "1"
 
     pluginApi.saveSettings()
     Logger.i("NoctaliaClipboard", "Settings saved")
@@ -47,7 +47,6 @@ ColumnLayout {
       Layout.preferredWidth: 80
       label: ""
       text: String(cfg.maxItems ?? defaults.maxItems ?? 50)
-      validator: RegularExpressionValidator { regularExpression: /[0-9]+/ }
       onTextChanged: root.saveSettings()
     }
   }
@@ -68,7 +67,6 @@ ColumnLayout {
       Layout.preferredWidth: 80
       label: ""
       text: String(cfg.previewWidth ?? defaults.previewWidth ?? 60)
-      validator: RegularExpressionValidator { regularExpression: /[0-9]+/ }
       onTextChanged: root.saveSettings()
     }
   }
@@ -84,10 +82,12 @@ ColumnLayout {
       Layout.preferredWidth: 200
     }
 
-    NSwitch {
-      id: showCountSwitch
-      checked: cfg.showCount ?? defaults.showCount ?? true
-      onCheckedChanged: root.saveSettings()
+    NTextInput {
+      id: showCountCheck
+      Layout.preferredWidth: 80
+      label: ""
+      text: (cfg.showCount ?? defaults.showCount ?? true) ? "1" : "0"
+      onTextChanged: root.saveSettings()
     }
   }
 
@@ -102,11 +102,20 @@ ColumnLayout {
       Layout.preferredWidth: 200
     }
 
-    NSwitch {
-      id: persistFilterSwitch
-      checked: cfg.persistFilter ?? defaults.persistFilter ?? true
-      onCheckedChanged: root.saveSettings()
+    NTextInput {
+      id: persistFilterCheck
+      Layout.preferredWidth: 80
+      label: ""
+      text: (cfg.persistFilter ?? defaults.persistFilter ?? true) ? "1" : "0"
+      onTextChanged: root.saveSettings()
     }
+  }
+
+  NText {
+    Layout.fillWidth: true
+    text: "Tip: enter 1 for true, 0 for false"
+    color: Color.mOnSurfaceVariant
+    pointSize: Style.fontSizeXS
   }
 
   Item {
