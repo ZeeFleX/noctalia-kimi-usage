@@ -1,0 +1,13 @@
+{
+  "bar.tooltip": "История буфера обмена (клик для просмотра)",
+  "bar.empty": "Пусто",
+  "bar.count": "{0} записей",
+  "popup.search": "Поиск...",
+  "popup.clear": "Очистить историю",
+  "popup.empty": "История буфера обмена пуста",
+  "popup.image": "[Изображение]",
+  "settings.maxItems": "Макс. записей в истории",
+  "settings.previewWidth": "Ширина превью (символы)",
+  "settings.showCount": "Показывать счётчик в панели",
+  "settings.persistFilter": "Сохранять фильтр между открытиями"
+}

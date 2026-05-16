@@ -33,6 +33,22 @@
         "Utility"
       ],
       "lastUpdated": "2026-05-16T02:30:00+05:00"
+    },
+    {
+      "id": "noctalia-clipboard",
+      "name": "Noctalia Clipboard",
+      "version": "1.0.0",
+      "author": "Ilya Kardapolov (ZeeFleX)",
+      "description": "Clipboard history manager with search. Powered by cliphist. Click bar icon to browse, search and paste previous copies.",
+      "repository": "https://github.com/ZeeFleX/noctalia-plugins",
+      "minNoctaliaVersion": "3.6.0",
+      "license": "MIT",
+      "tags": [
+        "Bar",
+        "Clipboard",
+        "Utility"
+      ],
+      "lastUpdated": "2026-05-16T18:15:00+05:00"
     }
   ]
 }
